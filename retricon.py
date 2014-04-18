@@ -2,7 +2,7 @@ import hashlib, math
 import struct
 
 from PIL import Image, ImageDraw
-
+    
 def brightness(r, g, b):
     return math.sqrt(.241*r*r+.691*g*g+.068*b*b)
 
@@ -12,7 +12,7 @@ def cmp_brightness(a, b):
 def fprint(buf, length):
     if length>64:
         raise Exception('sha512 can only generate 64B of data: %dB requested'%length)
-    
+
     x = hashlib.sha512(buf).digest().encode('hex_codec')
     i = length*2
     r = x[0:i]
@@ -31,7 +31,6 @@ def idhash(name, n, minFill, maxFill):
         f = fprint(buf, int(math.ceil(n/8.0)+6))
         f = map(lambda x:struct.unpack('B', x)[0], f)
         pixels = []
-        
         for x in ((f[6:])[:n]):
             for j in range(8):
                 pixels.append((x>>j)&1)
@@ -44,23 +43,75 @@ def idhash(name, n, minFill, maxFill):
                 'colors': c,
                 'pixels': pixels
             }
-    raise Exception("String '''%s''' unhashable in single-byte search space."%name);
+    raise Exception("String '''%s''' unhashable in single-byte search space."%name)
 
-def reflect(id, dimension):
-    mid = int(math.ceil(dimension / 2.0));
-    odd = dimension % 2 != 0;
+def fillPixels(id, dimension):
+    pic = [0]*dimension
+    for row in range(dimension):
+        pic[row] = [0]*dimension
+        for col in range(dimension):
+            p = row * dimension + col
+            pic[row][col] = id['pixels'][p]
+    return pic
+    
+def fillPixelsVSym(id, dimension):
+    mid = int(math.ceil(dimension / 2.0))
+    odd = dimension % 2 != 0
 
     pic = [0]*dimension
     for row in range(dimension):
         pic[row] = [0]*dimension
         for col in range(dimension):
-            p = (row * mid) + col
+            p = row * mid + col
             if col >= mid:
-                d = mid - col;
+                d = mid - col
                 if odd:
                     d -= 1
                 ad = abs(d)
-                p = (row * mid) + mid - 1 - ad;
+                p = row * mid + mid - 1 - ad
+            pic[row][col] = id['pixels'][p]
+            
+    return pic
+    
+def fillPixelsCSym(id, dimension):
+    mid = int(math.ceil(dimension / 2.0))
+    odd = dimension % 2 != 0
+
+    pic = [0]*dimension
+    for row in range(dimension):
+        pic[row] = [0]*dimension
+        for col in range(dimension):
+            if row < mid:
+                p = (row * mid) + col
+                if col >= mid:
+                    d = mid - col
+                    if odd:
+                        d -= 1
+                    ad = abs(d)
+                    p = (row * mid) + mid - 1 - ad
+                pic[row][col] = id['pixels'][p]
+            else:
+                p = (dimension - 1 - row) * mid + col
+                if col >= mid:
+                    d = mid - col
+                    if odd:
+                        d -= 1
+                    ad = abs(d)
+                    p = (dimension-1-row) * mid + mid - 1 - ad
+                pic[row][col] = id['pixels'][p]
+    return pic
+    
+def fillPixelsHSym(id, dimension):
+    mid = int(math.ceil(dimension / 2.0))
+    odd = dimension % 2 != 0
+
+    pic = [0]*dimension
+    for row in range(dimension):
+        pic[row] = [0]*dimension
+        for col in range(dimension):
+            p = (row * dimension) + col
+            if row >= mid:
+                p = (dimension - 1 - row) * dimension + col
             pic[row][col] = id['pixels'][p]
             
     return pic
@@ -74,14 +125,26 @@ def retricon(
         tiles = 5,
         minFill = 0.3,
         maxFill = 0.90,
-        pixelColor = 0
+        pixelColor = 0,
+        vSym = True,
+        hSym = False
     ):
     
     dimension = tiles
     border = pixelPadding
     mid = int(math.ceil(dimension/2.0))
-    id = idhash(name, mid*dimension, minFill, maxFill)
-    pic = reflect(id, dimension)
+    if vSym and hSym:
+        id = idhash(name, mid*mid, minFill, maxFill)
+        pic = fillPixelsCSym(id, dimension)
+    elif vSym or hSym:
+        id = idhash(name, mid*dimension, minFill, maxFill)
+        if vSym:
+            pic = fillPixelsVSym(id, dimension)
+        else:
+            pic = fillPixelsHSym(id, dimension)
+    else:
+        id = idhash(name, dimension*dimension, minFill, maxFill)
+        pic = fillPixels(id, dimension)
     csize = pixelSize*dimension+imagePadding*2
     
     im = Image.new('RGBA', (csize, csize))
@@ -124,24 +187,30 @@ def retricon(
     del draw
     return im
 
-def github(name):
+def github(name, *args, **kwargs):
     return retricon(
         name, 
         pixelSize=70, 
         bgColor="F0F0F0", 
         pixelPadding=-1, 
         imagePadding=35, 
-        tiles=5
+        tiles=5,
+        vSym=True,
+        hSym=False,
+        *args, **kwargs
     )
 
-def gravatar(name):
+def gravatar(name, *args, **kwargs):
     return retricon(
         name,  
         bgColor=1,  
-        tiles=8
+        tiles=8,
+        vSym=True,
+        hSym=False,
+        *args, **kwargs
     )
     
-def mono(name):
+def mono(name, *args, **kwargs):
     return retricon(
         name,
         bgColor = 'F0F0F0',
@@ -149,37 +218,48 @@ def mono(name):
         tiles= 6,
         pixelSize= 12,
         pixelPadding= -1,
-        imagePadding= 6
+        imagePadding= 6,
+        vSym=True,
+        hSym=False,
+        *args, **kwargs
     )
 
-def mosaic(name):
+def mosaic(name, *args, **kwargs):
     return retricon(
         name,
         imagePadding= 2,
         pixelPadding= 1,
         pixelSize= 16,
-        bgColor= 'F0F0F0'
+        bgColor= 'F0F0F0',
+        vSym=True,
+        hSym=False,
+        *args, **kwargs
     )
 
-def mini(name):
+def mini(name, *args, **kwargs):
     return retricon(
         name,
         pixelSize= 10,
         pixelPadding= 1,
         tiles= 3,
         bgColor= 0,
-        pixelColor= 1
+        pixelColor= 1,
+        vSym=False,
+        hSym=False,
+        *args, **kwargs
     )
 
-
-def window(name):
+def window(name, *args, **kwargs):
     return retricon(
         name,
         pixelColor= [255, 255, 255, 255],
         bgColor= 0,
         imagePadding= 2,
         pixelPadding= 1,
-        pixelSize= 16
+        pixelSize= 16,
+        vSym=True,
+        hSym=False,
+        *args, **kwargs
     )
     
 
@@ -200,3 +280,12 @@ if __name__ == "__main__":
     im.save('mosaic.png', 'PNG')
     im = window(name)
     im.save('window.png', 'PNG')
+    im = retricon(name, vSym=True, hSym=False, tiles=14, bgColor= 0, pixelColor= 1, pixelPadding=1, pixelSize=10)
+    im.save('vsym.png', 'PNG')
+    im = retricon(name, vSym=False, hSym=True, tiles=14, bgColor= 0, pixelColor= 1, pixelPadding=1, pixelSize=10)
+    im.save('hsym.png', 'PNG')
+    im = retricon(name, vSym=False, hSym=False, tiles=14, bgColor= 0, pixelColor= 1, pixelPadding=1, pixelSize=10)
+    im.save('noSym.png', 'PNG')
+    im = retricon(name, vSym=True, hSym=True, tiles=42, bgColor= 0, pixelColor= 1, pixelPadding=1, pixelSize=10, maxFill=.5)
+    im.save('cSym.png', 'PNG')
+    
