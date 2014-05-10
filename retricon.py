@@ -18,9 +18,9 @@ def fprint(buf, length):
     r = x[0:i]
     while i < len(x):
         r = format( int(r, 16)^int(x[i:i+length*2], 16), 'x')
-        i += length
-    if len(r)%2==1:
-        r = "0"+r
+        i += length*2
+    if len(r) < length*2:
+        r = "0"*(length*2-len(r)) + r
     return r.decode('hex_codec')
 
 def idhash(name, n, minFill, maxFill):
