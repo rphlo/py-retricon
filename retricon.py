@@ -1,8 +1,8 @@
 import hashlib, math
 import struct
-
 from PIL import Image, ImageDraw
-    
+
+
 def brightness(r, g, b):
     return math.sqrt(.241*r*r+.691*g*g+.068*b*b)
 
@@ -14,27 +14,29 @@ def fprint(buf, length):
         raise Exception('sha512 can only generate 64B of data: %dB requested'%length)
 
     x = hashlib.sha512(buf).digest().encode('hex_codec')
-    i = length*2
+    hex_length = length*2
+    if len(x)%hex_length != 0:
+        x = x + "0"*(hex_length-len(x)%hex_length)
+    i = hex_length
     r = x[0:i]
     while i < len(x):
-        r = format( int(r, 16)^int(x[i:i+length*2], 16), 'x')
-        i += length*2
-    if len(r) < length*2:
-        r = "0"*(length*2-len(r)) + r
+        r = format( int(r, 16)^int(x[i:i+hex_length], 16), 'x')
+        i += hex_length
+    if len(r) < hex_length:
+        r = "0"*(hex_length-len(r)) + r
     return r.decode('hex_codec')
 
 def idhash(name, n, minFill, maxFill):
     buf = name+" "
-    
     for i in range(0x100):
         buf = buf[:-1]+struct.pack('B', i)
         f = fprint(buf, int(math.ceil(n/8.0)+6))
         f = map(lambda x:struct.unpack('B', x)[0], f)
         pixels = []
-        for x in ((f[6:])[:n]):
+        for x in f[6:]:
             for j in range(8):
                 pixels.append((x>>j)&1)
-        
+        pixels = pixels[:n]
         setPixels = len(filter(lambda x:x==1, pixels))
         c = [f[:3], f[3:6]]
         c = sorted(c, cmp=cmp_brightness)
@@ -53,11 +55,10 @@ def fillPixels(id, dimension):
             p = row * dimension + col
             pic[row][col] = id['pixels'][p]
     return pic
-    
+
 def fillPixelsVSym(id, dimension):
     mid = int(math.ceil(dimension / 2.0))
     odd = dimension % 2 != 0
-
     pic = [0]*dimension
     for row in range(dimension):
         pic[row] = [0]*dimension
@@ -72,11 +73,10 @@ def fillPixelsVSym(id, dimension):
             pic[row][col] = id['pixels'][p]
             
     return pic
-    
+
 def fillPixelsCSym(id, dimension):
     mid = int(math.ceil(dimension / 2.0))
     odd = dimension % 2 != 0
-
     pic = [0]*dimension
     for row in range(dimension):
         pic[row] = [0]*dimension
@@ -100,11 +100,10 @@ def fillPixelsCSym(id, dimension):
                     p = (dimension-1-row) * mid + mid - 1 - ad
                 pic[row][col] = id['pixels'][p]
     return pic
-    
+
 def fillPixelsHSym(id, dimension):
     mid = int(math.ceil(dimension / 2.0))
     odd = dimension % 2 != 0
-
     pic = [0]*dimension
     for row in range(dimension):
         pic[row] = [0]*dimension
@@ -129,7 +128,6 @@ def retricon(
         vSym = True,
         hSym = False
     ):
-    
     dimension = tiles
     border = pixelPadding
     mid = int(math.ceil(dimension/2.0))
@@ -146,10 +144,8 @@ def retricon(
         id = idhash(name, dimension*dimension, minFill, maxFill)
         pic = fillPixels(id, dimension)
     csize = pixelSize*dimension+imagePadding*2
-    
     im = Image.new('RGBA', (csize, csize))
     draw = ImageDraw.Draw(im)
-    
     if bgColor is not None:
         if isinstance(bgColor, basestring):
             bgColor = [
@@ -164,7 +160,6 @@ def retricon(
             (0,0, csize, csize), 
             fill = tuple(bgColor)
         )
-    
     if isinstance(pixelColor, basestring):
         pixelColor = [
             struct.unpack('B', pixelColor[0:2].decode('hex_codec'))[0],
@@ -173,7 +168,6 @@ def retricon(
         ]
     elif isinstance(pixelColor, int):
         pixelColor = id['colors'][pixelColor]
-    
     for x in range(dimension):
         for y in range(dimension):
             if pic[y][x] == 1:
@@ -261,7 +255,7 @@ def window(name, *args, **kwargs):
         hSym=False,
         *args, **kwargs
     )
-    
+
 
 if __name__ == "__main__":
     import random
@@ -288,4 +282,3 @@ if __name__ == "__main__":
     im.save('noSym.png', 'PNG')
     im = retricon(name, vSym=True, hSym=True, tiles=42, bgColor= 0, pixelColor= 1, pixelPadding=1, pixelSize=10, maxFill=.5)
     im.save('cSym.png', 'PNG')
-    
