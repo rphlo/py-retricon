@@ -5,7 +5,7 @@ setup(
     version='1.0',
     packages=['retricon',],
     license="MIT License",
-    description='Django app for live gps tracking of orienteering events',
+    description='Library to create cool icon based',
     long_description=README,
     url='http://github.com/rphlo/django-seuranta',
     author='Raphael Stefanini',
