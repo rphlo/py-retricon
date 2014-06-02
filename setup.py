@@ -8,7 +8,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='retricon',
-    version='1.0',
+    version='1.0.0',
     packages=['retricon',],
     license="MIT License",
     description='Library to create cool icon based',
