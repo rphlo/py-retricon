@@ -14,6 +14,12 @@ setup(
     description='Library to create cool icon based',
     long_description=README,
     url='http://github.com/rphlo/django-seuranta',
+    download_url='https://github.com/rphlo/py-retricon/tarball/1.0',
     author='Raphael Stefanini',
     author_email='rphl@rphl.net',
+    keywords = ['image', 'avatar', 'icon'],
+    classifiers=[],
+    install_requires=[
+        'pillowfight'
+    ]
 )
