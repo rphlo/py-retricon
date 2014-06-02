@@ -11,7 +11,7 @@ setup(
     version='1.0.0',
     packages=['retricon',],
     license="MIT License",
-    description='Library to create cool icon based',
+    description='Library to create cool avatar',
     long_description=README,
     url='http://github.com/rphlo/django-seuranta',
     download_url='https://github.com/rphlo/py-retricon/tarball/v1.0.0',
