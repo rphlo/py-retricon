@@ -203,6 +203,8 @@ def retricon(name, style=None, pixel_size=10,
             (0, 0, csize, csize),
             fill=tuple(bg_color)
         )
+    if pixel_color is None:
+        pixel_color = [0, 0, 0, 0]
     if isinstance(pixel_color, basestring):
         pixel_color = [
             struct.unpack('B', pixel_color[0:2].decode('hex_codec'))[0],
@@ -216,7 +218,7 @@ def retricon(name, style=None, pixel_size=10,
             if pic[y][x] == 1:
                 x0 = (x*pixel_size) + border + image_padding
                 y0 = (y*pixel_size) + border + image_padding
-                width = pixel_size - (border * 2)
+                width = pixel_size - (border * 2) - 1
                 draw.rectangle( 
                     (x0, y0, x0 + width, y0 + width), 
                     fill=tuple(pixel_color)
@@ -258,7 +260,8 @@ def test():
                   tiles=42, bg_color=0, pixel_color=1, pixel_padding=1, 
                   pixel_size=10, max_fill=.5)
     im.save('center_sym.png', 'PNG')
-
+    im = retricon(val, bg_color=[255, 255, 0, 50], pixel_color=None)
+    im.save('test_trans.png', 'PNG')
 
 if __name__ == "__main__":
     test()
