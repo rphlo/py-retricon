@@ -10,7 +10,7 @@ setup(
     packages=['retricon',],
     license="MIT License",
     description='Library to create unique images such as Github avatar',
-    url='http://github.com/rphlo/django-seuranta',
+    url='http://github.com/rphlo/py-retricon',
     download_url='https://github.com/rphlo/py-retricon/tarball/v1.0.3',
     author='Raphael Stefanini',
     author_email='rphl@rphl.net',
