@@ -123,14 +123,13 @@ def fill_pixels_hori_sym(raw, dimension):
     return pic
 
 
-def retricon(name, style=None, pixel_size=10,
-             bg_color=None, pixel_padding=0, image_padding=0,
-             tiles=5, min_fill=0.3, max_fill=0.90, pixel_color=0,
-             vertical_sym=True, horizontal_sym=False):
+def retricon(name, tiles=5, tile_size=10, tile_color=0, bg_color=None,
+             tile_padding=0, image_padding=0, min_fill=0.3, max_fill=0.90,
+             vertical_sym=True, horizontal_sym=False, style=None):
     if style == 'github':
-        pixel_size = 70
+        tile_size = 70
         bg_color = "F0F0F0"
-        pixel_padding = -1
+        tile_padding = -1
         image_padding = 35
         tiles = 5
         vertical_sym = True
@@ -142,38 +141,38 @@ def retricon(name, style=None, pixel_size=10,
         horizontal_sym = False
     elif style == 'mono':
         bg_color = 'F0F0F0'
-        pixel_color = '000000'
+        tile_color = '000000'
         tiles = 6
-        pixel_size = 12
-        pixel_padding = -1
+        tile_size = 12
+        tile_padding = -1
         image_padding = 6
         vertical_sym = True
         horizontal_sym = False
     elif style == 'mosaic':
         image_padding = 2
-        pixel_padding = 1
-        pixel_size = 16
+        tile_padding = 1
+        tile_size = 16
         bg_color = 'F0F0F0'
         vertical_sym = True
         horizontal_sym = False
     elif style == 'mini':
-        pixel_size = 10
-        pixel_padding = 1
+        tile_size = 10
+        tile_padding = 1
         tiles = 3
         bg_color = 0
-        pixel_color = 1
+        tile_color = 1
         vertical_sym = False
         horizontal_sym = False
     elif style == 'window':
-        pixel_color = [255, 255, 255, 255]
+        tile_color = [255, 255, 255, 255]
         bg_color = 0
         image_padding = 2
-        pixel_padding = 1
-        pixel_size = 16
+        tile_padding = 1
+        tile_size = 16
         vertical_sym = True
         horizontal_sym = False
     dimension = tiles
-    border = pixel_padding
+    border = tile_padding
     mid = int(math.ceil(dimension/2.0))
     if vertical_sym and horizontal_sym:
         raw = id_hash(name, mid*mid, min_fill, max_fill)
@@ -187,7 +186,7 @@ def retricon(name, style=None, pixel_size=10,
     else:
         raw = id_hash(name, dimension*dimension, min_fill, max_fill)
         pic = fill_pixels(raw, dimension)
-    csize = pixel_size*dimension+image_padding*2
+    csize = tile_size*dimension+image_padding*2
     im = Image.new('RGBA', (csize, csize))
     draw = ImageDraw.Draw(im)
     if bg_color is not None:
@@ -203,25 +202,25 @@ def retricon(name, style=None, pixel_size=10,
             (0, 0, csize, csize),
             fill=tuple(bg_color)
         )
-    if pixel_color is None:
-        pixel_color = [0, 0, 0, 0]
-    if isinstance(pixel_color, basestring):
-        pixel_color = [
-            struct.unpack('B', pixel_color[0:2].decode('hex_codec'))[0],
-            struct.unpack('B', pixel_color[2:4].decode('hex_codec'))[0],
-            struct.unpack('B', pixel_color[4:6].decode('hex_codec'))[0]
+    if tile_color is None:
+        tile_color = [0, 0, 0, 0]
+    if isinstance(tile_color, basestring):
+        tile_color = [
+            struct.unpack('B', tile_color[0:2].decode('hex_codec'))[0],
+            struct.unpack('B', tile_color[2:4].decode('hex_codec'))[0],
+            struct.unpack('B', tile_color[4:6].decode('hex_codec'))[0]
         ]
-    elif isinstance(pixel_color, int):
-        pixel_color = raw['colors'][pixel_color]
+    elif isinstance(tile_color, int):
+        tile_color = raw['colors'][tile_color]
     for x in range(dimension):
         for y in range(dimension):
             if pic[y][x] == 1:
-                x0 = (x*pixel_size) + border + image_padding
-                y0 = (y*pixel_size) + border + image_padding
-                width = pixel_size - (border * 2) - 1
+                x0 = (x*tile_size) + border + image_padding
+                y0 = (y*tile_size) + border + image_padding
+                width = tile_size - (border * 2) - 1
                 draw.rectangle( 
                     (x0, y0, x0 + width, y0 + width), 
-                    fill=tuple(pixel_color)
+                    fill=tuple(tile_color)
                 )
     del draw
     return im
@@ -245,22 +244,22 @@ def test():
     im = retricon(val, style='window')
     im.save('window.png', 'PNG')
     im = retricon(val, vertical_sym=True, horizontal_sym=False, 
-                  tiles=14, bg_color=0, pixel_color=1, pixel_padding=1, 
-                  pixel_size=10)
+                  tiles=14, bg_color=0, tile_color=1, tile_padding=1, 
+                  tile_size=10)
     im.save('vertical_sym.png', 'PNG')
     im = retricon(val, vertical_sym=False, horizontal_sym=True, 
-                  tiles=14, bg_color=0, pixel_color=1, pixel_padding=1, 
-                  pixel_size=10)
+                  tiles=14, bg_color=0, tile_color=1, tile_padding=1, 
+                  tile_size=10)
     im.save('horizontal_sym.png', 'PNG')
     im = retricon(val, vertical_sym=False, horizontal_sym=False, 
-                  tiles=14, bg_color=0, pixel_color=1, pixel_padding=1, 
-                  pixel_size=10)
+                  tiles=14, bg_color=0, tile_color=1, tile_padding=1, 
+                  tile_size=10)
     im.save('noSym.png', 'PNG')
     im = retricon(val, vertical_sym=True, horizontal_sym=True, 
-                  tiles=42, bg_color=0, pixel_color=1, pixel_padding=1, 
-                  pixel_size=10, max_fill=.5)
+                  tiles=42, bg_color=0, tile_color=1, tile_padding=1, 
+                  tile_size=10, max_fill=.5)
     im.save('center_sym.png', 'PNG')
-    im = retricon(val, bg_color=[255, 255, 0, 50], pixel_color=None)
+    im = retricon(val, bg_color=[255, 255, 0, 50], tile_color=None)
     im.save('test_trans.png', 'PNG')
 
 if __name__ == "__main__":
