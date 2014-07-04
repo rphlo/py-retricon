@@ -15,10 +15,10 @@ Parameters
 ==========
 
     style           Predefined style: 'github', 'gravatar', 'mono', 'mini', 'window' (Default: None)
-    pixel_size      Size of a tile (Default: 10)
+    tile_size       Size of a tile (Default: 10)
     bg_color        Background color. (Default: None)
-    pixel_color     Tiles color (Default: 0)
-    pixel_padding   Padding between tiles (Default: 0)
+    tile_color      Tiles color (Default: 0)
+    tile_padding    Padding of a tile (Default: 0)
     image_padding   Padding on the image(Default: 0)
     tiles           Number of tiles that make the width and height of the image (Default: 5)
     min_fill        Minimun ratio of tile in the image (Default: 0.3)
