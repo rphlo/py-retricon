@@ -11,6 +11,7 @@ Usage
     img = retricon("Hello World!")
     img.save('hello.png', 'PNG')
 
+
 Parameters
 ==========
 
@@ -20,12 +21,13 @@ Parameters
     tile_padding    Padding of each tiles (Default: 0)
     bg_color        Background color (Default: None)
     image_padding   Padding of the icon (Default: 0)
-    tiles           Number of tiles that make the width/height of the icon (Default: 5)
+    tiles           Number of tiles that make the width of the icon (Default: 5)
     min_fill        Minimum ratio of tile in the image (Default: 0.3)
     max_fill        Maximum ratio of tile in the image (Default: 0.9)
     vertical_sym    Use vertical symmetry (Default: True)
     horizontal_sym  Use horizontal symmetry (Default: False)
     width           Width of the output image in pixels (Default: 500)
+
 
 Predefined styles
 =================
