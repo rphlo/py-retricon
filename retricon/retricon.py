@@ -31,20 +31,31 @@ def fprint(buf, length):
     return ret.decode('hex_codec')
 
 
-def id_hash(name, length, min_fill, max_fill):
+def id_hash(name, length, min_fill, max_fill, use_colors):
     buf = name+" "
+    needed_bytes = int(math.ceil(length/8.0))
+    if use_colors:
+        needed_bytes += 6
     for ii in range(0x100):
         buf = buf[:-1]+struct.pack('B', ii)
-        fp = fprint(buf, int(math.ceil(length/8.0)+6))
+        fp = fprint(buf, needed_bytes)
         fp = map(lambda x: struct.unpack('B', x)[0], fp)
         pixels = []
-        for byte in fp[6:]:
-            for offset in range(8):
-                pixels.append((byte >> offset) & 1)
-        pixels = pixels[:length]
-        set_pixels = len(filter(lambda x:x==1, pixels))
-        colors = [fp[:3], fp[3:6]]
-        colors = sorted(colors, cmp=cmp_brightness)
+        set_pixels = 0
+        if use_colors:
+            colors = [fp[:3], fp[3:6]]
+            colors = sorted(colors, cmp=cmp_brightness)
+            fp = fp[6:]
+        else:
+            colors = [None, None]
+        for byte, offset in ((_byte, _offset)
+                             for _byte in fp for _offset in range(7, -1, -1)):
+            pixel_val = (byte >> offset) & 1
+            pixels.append(pixel_val)
+            if pixel_val == 1:
+                set_pixels += 1
+            if len(pixels) == length:
+                break
         if min_fill * length < set_pixels < max_fill * length:
             return {
                 'colors': colors,
@@ -55,9 +66,9 @@ def id_hash(name, length, min_fill, max_fill):
 
 
 def fill_pixels(raw, dimension):
-    pic = [0]*dimension
+    pic = [[]]*dimension
     for row in range(dimension):
-        pic[row] = [0]*dimension
+        pic[row] = [[]]*dimension
         for col in range(dimension):
             ii = row * dimension + col
             pic[row][col] = raw['pixels'][ii]
@@ -67,9 +78,9 @@ def fill_pixels(raw, dimension):
 def fill_pixels_vert_sym(raw, dimension):
     mid = int(math.ceil(dimension / 2.0))
     odd = dimension % 2 != 0
-    pic = [0]*dimension
+    pic = [[]]*dimension
     for row in range(dimension):
-        pic[row] = [0]*dimension
+        pic[row] = [[]]*dimension
         for col in range(dimension):
             if col < mid:
                 ii = row * mid + col
@@ -86,9 +97,9 @@ def fill_pixels_vert_sym(raw, dimension):
 def fill_pixels_cent_sym(raw, dimension):
     mid = int(math.ceil(dimension / 2.0))
     odd = dimension % 2 != 0
-    pic = [0]*dimension
+    pic = [[]]*dimension
     for row in range(dimension):
-        pic[row] = [0]*dimension
+        pic[row] = [[]]*dimension
         for col in range(dimension):
             if col >= mid:
                 dist_middle = mid - col
@@ -111,9 +122,9 @@ def fill_pixels_cent_sym(raw, dimension):
 
 def fill_pixels_hori_sym(raw, dimension):
     mid = int(math.ceil(dimension / 2.0))
-    pic = [0]*dimension
+    pic = [[]]*dimension
     for row in range(dimension):
-        pic[row] = [0]*dimension
+        pic[row] = [[]]*dimension
         for col in range(dimension):
             if row < mid:
                 ii = (row * dimension) + col
@@ -123,9 +134,10 @@ def fill_pixels_hori_sym(raw, dimension):
     return pic
 
 
-def retricon(name, tiles=5, tile_size=10, tile_color=0, bg_color=None,
+def retricon(name, tiles=5, tile_size=1, tile_color=0, bg_color=None,
              tile_padding=0, image_padding=0, min_fill=0.3, max_fill=0.90,
-             vertical_sym=True, horizontal_sym=False, style=None):
+             vertical_sym=True, horizontal_sym=False, style=None,
+             width=500):
     if style == 'github':
         tile_size = 70
         bg_color = "F0F0F0"
@@ -171,37 +183,17 @@ def retricon(name, tiles=5, tile_size=10, tile_color=0, bg_color=None,
         tile_size = 16
         vertical_sym = True
         horizontal_sym = False
-    dimension = tiles
-    border = tile_padding
-    mid = int(math.ceil(dimension/2.0))
-    if vertical_sym and horizontal_sym:
-        raw = id_hash(name, mid*mid, min_fill, max_fill)
-        pic = fill_pixels_cent_sym(raw, dimension)
-    elif vertical_sym or horizontal_sym:
-        raw = id_hash(name, mid*dimension, min_fill, max_fill)
-        if vertical_sym:
-            pic = fill_pixels_vert_sym(raw, dimension)
-        else:
-            pic = fill_pixels_hori_sym(raw, dimension)
-    else:
-        raw = id_hash(name, dimension*dimension, min_fill, max_fill)
-        pic = fill_pixels(raw, dimension)
-    csize = tile_size*dimension+image_padding*2
-    im = Image.new('RGBA', (csize, csize))
-    draw = ImageDraw.Draw(im)
-    if bg_color is not None:
-        if isinstance(bg_color, basestring):
-            bg_color = [
-                struct.unpack('B', bg_color[0:2].decode('hex_codec'))[0],
-                struct.unpack('B', bg_color[2:4].decode('hex_codec'))[0],
-                struct.unpack('B', bg_color[4:6].decode('hex_codec'))[0]
-            ]
-        elif isinstance(bg_color, int):
-            bg_color = raw['colors'][bg_color]
-        draw.rectangle(
-            (0, 0, csize, csize),
-            fill=tuple(bg_color)
-        )
+    elif style is not None:
+        raise ValueError('Wrong parameter style')
+
+    if bg_color is None:
+        bg_color = [0, 0, 0, 0]
+    if isinstance(bg_color, basestring):
+        bg_color = [
+            struct.unpack('B', bg_color[0:2].decode('hex_codec'))[0],
+            struct.unpack('B', bg_color[2:4].decode('hex_codec'))[0],
+            struct.unpack('B', bg_color[4:6].decode('hex_codec'))[0]
+        ]
     if tile_color is None:
         tile_color = [0, 0, 0, 0]
     if isinstance(tile_color, basestring):
@@ -210,25 +202,55 @@ def retricon(name, tiles=5, tile_size=10, tile_color=0, bg_color=None,
             struct.unpack('B', tile_color[2:4].decode('hex_codec'))[0],
             struct.unpack('B', tile_color[4:6].decode('hex_codec'))[0]
         ]
-    elif isinstance(tile_color, int):
+    if isinstance(bg_color, int) or isinstance(tile_color, int):
+        use_color = True
+    else:
+        use_color = False
+    tile_width = tile_size+tile_padding*2
+    canvas_size = tile_width*tiles+image_padding*2
+    draw_scale = max((width//canvas_size), 1)
+    dimension = tiles
+    mid = int(math.ceil(dimension/2.0))
+    if vertical_sym and horizontal_sym:
+        raw = id_hash(name, mid*mid, min_fill, max_fill, use_color)
+        pic = fill_pixels_cent_sym(raw, dimension)
+    elif vertical_sym or horizontal_sym:
+        raw = id_hash(name, mid*dimension, min_fill, max_fill, use_color)
+        if vertical_sym:
+            pic = fill_pixels_vert_sym(raw, dimension)
+        else:
+            pic = fill_pixels_hori_sym(raw, dimension)
+    else:
+        raw = id_hash(name, dimension*dimension, min_fill, max_fill, use_color)
+        pic = fill_pixels(raw, dimension)
+    if isinstance(bg_color, int):
+        bg_color = raw['colors'][bg_color]
+    if isinstance(tile_color, int):
         tile_color = raw['colors'][tile_color]
+    im = Image.new('RGBA', (canvas_size*draw_scale, canvas_size*draw_scale))
+    draw = ImageDraw.Draw(im)
+    draw.rectangle((0, 0, canvas_size*draw_scale, canvas_size*draw_scale),
+                   fill=tuple(bg_color))
     for x in range(dimension):
         for y in range(dimension):
             if pic[y][x] == 1:
-                x0 = (x*tile_size) + border + image_padding
-                y0 = (y*tile_size) + border + image_padding
-                width = tile_size - (border * 2) - 1
+                x0 = (x*tile_width) + tile_padding + image_padding
+                y0 = (y*tile_width) + tile_padding + image_padding
                 draw.rectangle( 
-                    (x0, y0, x0 + width, y0 + width), 
+                    (x0*draw_scale, y0*draw_scale,
+                     (x0 + tile_size)*draw_scale-1,
+                     (y0 + tile_size)*draw_scale-1),
                     fill=tuple(tile_color)
                 )
     del draw
-    return im
+    out_img = im.resize((width, width), Image.ANTIALIAS)
+    del im
+    return out_img
 
 
 def test():
     import random
-    val = "kibo-%d" % random.randrange(100000)
+    val = "kibo-%s" % random.randrange(100000)
     im = retricon(val)
     im.save('default.png', 'PNG')
     im = retricon(val, style='github')
@@ -252,15 +274,16 @@ def test():
                   tile_size=10)
     im.save('horizontal_sym.png', 'PNG')
     im = retricon(val, vertical_sym=False, horizontal_sym=False, 
-                  tiles=14, bg_color=0, tile_color=1, tile_padding=1, 
+                  tiles=10, bg_color=0, tile_color=1, tile_padding=1,
                   tile_size=10)
     im.save('noSym.png', 'PNG')
     im = retricon(val, vertical_sym=True, horizontal_sym=True, 
-                  tiles=42, bg_color=0, tile_color=1, tile_padding=1, 
-                  tile_size=10, max_fill=.5)
+                  tiles=44, bg_color='00ff00', tile_color='ff0000',
+                  tile_padding=1, tile_size=10, max_fill=.5)
     im.save('center_sym.png', 'PNG')
     im = retricon(val, bg_color=[255, 255, 0, 50], tile_color=None)
     im.save('test_trans.png', 'PNG')
+
 
 if __name__ == "__main__":
     test()
