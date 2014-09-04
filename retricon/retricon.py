@@ -66,9 +66,9 @@ def id_hash(name, length, min_fill, max_fill, use_colors):
 
 
 def fill_pixels(raw, dimension):
-    pic = [[]]*dimension
+    pic = [None]*dimension
     for row in range(dimension):
-        pic[row] = [[]]*dimension
+        pic[row] = [None]*dimension
         for col in range(dimension):
             ii = row * dimension + col
             pic[row][col] = raw['pixels'][ii]
@@ -78,9 +78,9 @@ def fill_pixels(raw, dimension):
 def fill_pixels_vert_sym(raw, dimension):
     mid = int(math.ceil(dimension / 2.0))
     odd = dimension % 2 != 0
-    pic = [[]]*dimension
+    pic = [None]*dimension
     for row in range(dimension):
-        pic[row] = [[]]*dimension
+        pic[row] = [None]*dimension
         for col in range(dimension):
             if col < mid:
                 ii = row * mid + col
@@ -97,9 +97,9 @@ def fill_pixels_vert_sym(raw, dimension):
 def fill_pixels_cent_sym(raw, dimension):
     mid = int(math.ceil(dimension / 2.0))
     odd = dimension % 2 != 0
-    pic = [[]]*dimension
+    pic = [None]*dimension
     for row in range(dimension):
-        pic[row] = [[]]*dimension
+        pic[row] = [None]*dimension
         for col in range(dimension):
             if col >= mid:
                 dist_middle = mid - col
@@ -122,9 +122,9 @@ def fill_pixels_cent_sym(raw, dimension):
 
 def fill_pixels_hori_sym(raw, dimension):
     mid = int(math.ceil(dimension / 2.0))
-    pic = [[]]*dimension
+    pic = [None]*dimension
     for row in range(dimension):
-        pic[row] = [[]]*dimension
+        pic[row] = [None]*dimension
         for col in range(dimension):
             if row < mid:
                 ii = (row * dimension) + col
