@@ -1,8 +1,9 @@
 py-retricon
 ===========
 
-Library to create identicons similar to Github avatars
-Port of node-retricon https://github.com/sehrgut/node-retricon to python
+Library to create identicons similar to Github avatars.
+
+Port of node-retricon https://github.com/sehrgut/node-retricon to python.
 
 Usage
 =====
