@@ -1,24 +1,26 @@
 __all__ = ['retricon']
+import codecs
 import hashlib
 import math
 import struct
 from PIL import Image, ImageDraw
+from six import string_types
 
 
 def brightness(r, g, b):
     return math.sqrt(.241*r*r+.691*g*g+.068*b*b)
 
 
-def cmp_brightness(a, b):
-    return cmp(brightness(a[0], a[1], a[2]), brightness(b[0], b[1], b[2]))
+def key_brightness(a):
+    return brightness(a[0], a[1], a[2])
 
 
-def fprint(buf, length):
+def fixed_length_hash(buf, length):
     if length > 64:
         raise Exception('sha512 can only generate 64B of data:'
                         ' %dB requested' % length)
     hex_length = length*2
-    val = hashlib.sha512(buf).digest().encode('hex_codec')
+    val = hashlib.sha512(buf).hexdigest()
     if len(val) % hex_length != 0:
         val += "0"*(hex_length-len(val) % hex_length)
     ii = hex_length
@@ -28,23 +30,24 @@ def fprint(buf, length):
         ii += hex_length
     if len(ret) < hex_length:
         ret = "0"*(hex_length-len(ret)) + ret
-    return ret.decode('hex_codec')
+    return codecs.decode(ret, 'hex')
 
 
 def id_hash(name, length, min_fill, max_fill, use_colors):
     buf = name+" "
+    buf_bytes = str.encode(buf)
     needed_bytes = int(math.ceil(length/8.0))
     if use_colors:
         needed_bytes += 6
     for ii in range(0x100):
-        buf = buf[:-1]+struct.pack('B', ii)
-        fp = fprint(buf, needed_bytes)
-        fp = map(lambda x: struct.unpack('B', x)[0], fp)
+        buf_bytes = buf_bytes[:-1]+struct.pack('B', ii)
+        fp = fixed_length_hash(buf_bytes, needed_bytes)
+        fp = [struct.unpack('B', fp[ii:ii+1])[0] for ii, x in enumerate(fp)]
         pixels = []
         set_pixels = 0
         if use_colors:
             colors = [fp[:3], fp[3:6]]
-            colors = sorted(colors, cmp=cmp_brightness)
+            colors = sorted(colors, key=key_brightness)
             fp = fp[6:]
         else:
             colors = [None, None]
@@ -188,19 +191,19 @@ def retricon(name, tiles=5, tile_size=1, tile_color=0, bg_color=None,
 
     if bg_color is None:
         bg_color = [0, 0, 0, 0]
-    if isinstance(bg_color, basestring):
+    if isinstance(bg_color, string_types):
         bg_color = [
-            struct.unpack('B', bg_color[0:2].decode('hex_codec'))[0],
-            struct.unpack('B', bg_color[2:4].decode('hex_codec'))[0],
-            struct.unpack('B', bg_color[4:6].decode('hex_codec'))[0]
+            struct.unpack('B', codecs.decode(bg_color[0:2], 'hex'))[0],
+            struct.unpack('B', codecs.decode(bg_color[2:4], 'hex'))[0],
+            struct.unpack('B', codecs.decode(bg_color[4:6], 'hex'))[0]
         ]
     if tile_color is None:
         tile_color = [0, 0, 0, 0]
-    if isinstance(tile_color, basestring):
+    if isinstance(tile_color, string_types):
         tile_color = [
-            struct.unpack('B', tile_color[0:2].decode('hex_codec'))[0],
-            struct.unpack('B', tile_color[2:4].decode('hex_codec'))[0],
-            struct.unpack('B', tile_color[4:6].decode('hex_codec'))[0]
+            struct.unpack('B', codecs.decode(tile_color[0:2], 'hex'))[0],
+            struct.unpack('B', codecs.decode(tile_color[2:4], 'hex'))[0],
+            struct.unpack('B', codecs.decode(tile_color[4:6], 'hex'))[0]
         ]
     if isinstance(bg_color, int) or isinstance(tile_color, int):
         use_color = True
@@ -249,8 +252,7 @@ def retricon(name, tiles=5, tile_size=1, tile_color=0, bg_color=None,
 
 
 def test():
-    import random
-    val = "kibo-%s" % random.randrange(100000)
+    val = "test-1000"
     im = retricon(val)
     im.save('default.png', 'PNG')
     im = retricon(val, style='github')
