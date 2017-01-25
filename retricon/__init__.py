@@ -1,1 +1,1 @@
-from retricon import retricon
+from .retricon import retricon
