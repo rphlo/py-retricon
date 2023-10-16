@@ -6,7 +6,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='retricon',
-    version='1.3.1',
+    version='1.3.2',
     packages=['retricon',],
     license="MIT License",
     description='Library to create identicons similar to Github avatars',
