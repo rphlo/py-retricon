@@ -248,7 +248,7 @@ def retricon(name, tiles=5, tile_size=1, tile_color=0, bg_color=None,
                     fill=tuple(tile_color)
                 )
     del draw
-    out_img = im.resize((width, width), Image.ANTIALIAS)
+    out_img = im.resize((width, width), Image.Resampling.LANCZOS)
     del im
     return out_img
 
