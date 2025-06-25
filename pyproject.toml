@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools >= 77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "retricon"
+version = "1.3.3"
+dependencies = [
+  "pillow",
+]
+authors = [
+  {name = "Raphael Stefanini", email = "raphael@rphlo.com"},
+]
+description = "A library to create icons similar to Github avatars"
+readme = "README.md"
+license = "MIT"
+license-files = ["LICENSE.txt"]
+keywords = ['image', 'avatar', 'icon', 'identicon']
+classifiers = [
+  "Programming Language :: Python"
+]
+requires-python = ">=3"
+
+[project.urls]
+Homepage = "https://github.com/rphlo/py-retricon"
