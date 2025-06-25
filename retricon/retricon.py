@@ -4,7 +4,6 @@ import hashlib
 import math
 import struct
 from PIL import Image, ImageDraw
-from six import string_types
 
 
 def brightness(r, g, b):
@@ -191,7 +190,7 @@ def retricon(name, tiles=5, tile_size=1, tile_color=0, bg_color=None,
 
     if bg_color is None:
         bg_color = [0, 0, 0, 0]
-    if isinstance(bg_color, string_types):
+    if isinstance(bg_color, str):
         bg_color = [
             struct.unpack('B', codecs.decode(bg_color[0:2], 'hex'))[0],
             struct.unpack('B', codecs.decode(bg_color[2:4], 'hex'))[0],
@@ -199,7 +198,7 @@ def retricon(name, tiles=5, tile_size=1, tile_color=0, bg_color=None,
         ]
     if tile_color is None:
         tile_color = [0, 0, 0, 0]
-    if isinstance(tile_color, string_types):
+    if isinstance(tile_color, str):
         tile_color = [
             struct.unpack('B', codecs.decode(tile_color[0:2], 'hex'))[0],
             struct.unpack('B', codecs.decode(tile_color[2:4], 'hex'))[0],
